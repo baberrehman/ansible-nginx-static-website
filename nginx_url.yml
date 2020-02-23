@@ -1,0 +1,45 @@
+---
+- hosts: all
+  tasks:
+    - name: Update VM
+      apt:
+        update_cache: yes
+        upgrade: 'yes'
+      become: yes
+    - name: ensure nginx is at the latest version
+      apt: name=nginx state=latest
+      become: yes
+    - name: start nginx
+      service:
+          name: nginx
+          state: started
+      become: yes
+    - name: Download nginx conf file
+      get_url:
+        url: https://ngcloudplexcp.s3.amazonaws.com/static-website/static_site.cfg
+        dest: /etc/nginx/sites-available/static_site.cfg
+      become: yes
+    - name: create symlink
+      file:
+        src: /etc/nginx/sites-available/static_site.cfg
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      become: yes
+    - name: ansible create directory
+      file:
+        path: /home/ubuntu/static-site
+        state: directory
+    - name: Install unzip
+      apt:
+        name: unzip
+        state: present
+    - name: Unarchive static site zip
+      unarchive:
+        src: https://ngcloudplexcp.s3.amazonaws.com/static-website/bell.zip
+        dest: /home/ubuntu/static-site
+        remote_src: yes
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+      become: yes
